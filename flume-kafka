@@ -1,0 +1,47 @@
+1、下载flume的安装包，解压至任一路径。
+
+2、搭建kafka集群。
+
+3、配置flume的配置文件，将其命名为kafka.conf，如下。
+
+ 
+
+agent.sources.s1.type = spooldir
+agent.sources.s1.spoolDir = /tmp/cdz/log
+agent.sources.s1.fileHeader = false
+agent.sources.s1.channels=c1
+
+#agent.sources.s1.type=exec
+#agent.sources.s1.command=tail -F /tmp/cdz/log/test.log
+#agent.sources.s1.channels=c1
+
+
+agent.channels.c1.type=memory
+agent.channels.c1.capacity=10000
+agent.channels.c1.transactionCapacity=100
+
+agent.sinks.k1.type= org.apache.flume.sink.kafka.KafkaSink
+agent.sinks.k1.brokerList=1.2.3.4:9092,1.2.3.5:9092
+agent.sinks.k1.topic=cdz_test
+agent.sinks.k1.serializer.class=kafka.serializer.StringEncoder
+agent.sinks.k1.channel=c1
+
+agent.channels = c1
+agent.sources = s1
+agent.sinks = k1
+
+ 
+
+4、指定运行flume。
+
+sh bin/flume-ng agent --conf ./conf --conf-file ./conf/kafka.conf --name agent -Dflume.root.logger=INFO,console -Dflume.monitoring.type=http -Dflume.monitoring.port=34545
+
+ 
+
+5、把任意文件放到spoolDir后，flume将会采集并发送至kafka。
+
+ 
+
+6、消费即可看到flume采集的数据。
+
+bin/kafka-console-consumer.sh --zookeeper 99.12.73.208:2181 --topic cdz_test
